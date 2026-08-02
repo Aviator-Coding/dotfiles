@@ -1,0 +1,71 @@
+name: CI
+
+# Validates the flake, builds the darwin system (build only, never activated),
+# and runs the repo's shell tests. This mainly guards the owner's own pushes and
+# PRs: close-prs.yml auto-closes PRs from non-owners before they can be reviewed,
+# which is intended.
+on:
+  push:
+  pull_request:
+
+# Only the latest run per ref needs to finish; cancel superseded ones.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  nix:
+    name: Flake check and darwin build
+    # aarch64-darwin config (see configuration.nix nixpkgs.hostPlatform), so the
+    # system must build on an Apple-silicon macOS runner.
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install Nix (Determinate Systems, flakes enabled)
+        uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22
+        with:
+          # nix-command and flakes are on by default in the Determinate installer;
+          # set them explicitly so CI does not depend on that default.
+          extra-conf: |
+            experimental-features = nix-command flakes
+
+      - name: Enable Nix build cache
+        uses: DeterminateSystems/magic-nix-cache-action@908b263ff629f4cc17666315b7fd3ec127c6244d # v14
+
+      - name: nix flake check
+        run: nix flake check --print-build-logs
+
+      - name: Build darwin system (build only, no activation)
+        # Build the system closure without linking a result symlink and without
+        # ever running switch/activate: CI must not mutate the runner's real
+        # system, Homebrew, or 1Password.
+        run: nix build .#darwinConfigurations.mac.system --no-link --print-build-logs
+
+  tests:
+    name: Shell tests
+    # The tests/ suite is plain shell + node and skips macOS-only paths (pi/tmux)
+    # gracefully, so it runs on the cheaper Linux runner in parallel with the build.
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Run tests/*.test.sh
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          tests=(tests/*.test.sh)
+          if [ ${#tests[@]} -eq 0 ]; then
+            echo "no tests found under tests/" >&2
+            exit 1
+          fi
+          for t in "${tests[@]}"; do
+            echo "::group::$t"
+            bash "$t"
+            echo "::endgroup::"
+          done
