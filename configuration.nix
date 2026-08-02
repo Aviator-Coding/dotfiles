@@ -46,6 +46,7 @@
     onActivation.extraFlags = [ "--force" ];
     brews = [
       "herdr"
+      "pi-coding-agent"  # Pi agent CLI (earendil-works/pi); config already managed in home.nix
     ];
     casks = [
       "wezterm"
