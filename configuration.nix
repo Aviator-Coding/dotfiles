@@ -12,6 +12,16 @@
     home = "/Users/${user}";
   };
   system.stateVersion = 6;
+  # Remote Login (Apple's built-in sshd), for VS Code Remote-SSH from another
+  # machine on the LAN. Key-only: see home/.ssh/authorized_keys.
+  services.openssh = {
+    enable = true;
+    extraConfig = ''
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+      MaxAuthTries 50
+    '';
+  };
   system.defaults = {
     NSGlobalDomain = {
       AppleInterfaceStyle = "Dark";
@@ -40,6 +50,9 @@
     casks = [
       "wezterm"
       "claude-code"
+      "visual-studio-code@insiders"
+      "1password"
+      "1password-cli"
     ];
   };
 }

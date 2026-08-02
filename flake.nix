@@ -18,7 +18,7 @@
     let
       # The one username line to change if this isn't your machine.
       # bootstrap.sh offers to rewrite this for you if your macOS username differs.
-      user = "kunchen";
+      user = "coder";
     in
     {
       darwinConfigurations."mac" = nix-darwin.lib.darwinSystem {
@@ -32,6 +32,10 @@
             home-manager.useUserPackages = true;
             home-manager.extraSpecialArgs = { inherit user; };
             home-manager.users.${user} = import ./home.nix;
+            # If a file home-manager wants to symlink already exists on disk
+            # (e.g. 1Password writes ~/.ssh/config itself when you enable its
+            # SSH agent), back it up instead of failing activation.
+            home-manager.backupFileExtension = "backup";
           }
         ];
       };
