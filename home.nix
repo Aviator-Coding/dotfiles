@@ -22,6 +22,29 @@ in
   fonts.fontconfig.enable = true;
   home.sessionVariables.EDITOR = "nvim";
 
+  # GitHub auth and commit signing for this box. This machine runs
+  # unattended, so its keys are a dedicated pair pulled from a read-only
+  # 1Password Service Account into plain files at rebuild time (see
+  # rebuild.sh and README: "GitHub SSH authentication & commit signing"),
+  # rather than 1Password's interactive SSH agent, which always requires a
+  # human to approve each use. Signing therefore uses git's default
+  # ssh-keygen-based signer against the local key - no 1Password dependency
+  # at commit time, no prompts. user.name/email live in ~/.config/git/config-local
+  # instead, which rebuild.sh also materializes from 1Password - so this
+  # public repo's config never hardcodes anyone's real identity.
+  programs.git = {
+    enable = true;
+    includes = [
+      { path = "${config.home.homeDirectory}/.config/git/config-local"; }
+    ];
+    settings = {
+      user.signingkey = "${config.home.homeDirectory}/.ssh/id_ed25519_mac_signing";
+      commit.gpgsign = true;
+      gpg.format = "ssh";
+      gpg.ssh.allowedSignersFile = "${config.home.homeDirectory}/.ssh/allowed_signers";
+    };
+  };
+
   programs.zsh = {
     enable = true;
     autosuggestion.enable = true;      # ghost text from history
@@ -62,6 +85,14 @@ in
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/herdr";
   home.file.".claude/settings.json".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.claude/settings.json";
+  home.file.".ssh/authorized_keys".source =
+    config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.ssh/authorized_keys";
+  home.file.".ssh/config".source =
+    config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.ssh/config";
+  # id_ed25519_mac_{auth,signing}(.pub) and allowed_signers are NOT declared
+  # here: they hold real key material (or are derived from it), so rebuild.sh
+  # writes them straight to ~/.ssh from 1Password via `op inject`, skipping
+  # both the Nix store (world-readable) and this git repo entirely.
 
   # Keep Pi's credential and runtime state local by linking only authored files and directories.
   home.file.".pi/agent/themes".source =

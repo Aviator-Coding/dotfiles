@@ -16,13 +16,15 @@ If you find a bug, please open a GitHub Issue using the bug report template.
 Running the switch builds:
 
 - System settings (dark mode, key repeat, dock, Finder, trackpad)
-- Homebrew apps (casks and CLI tools)
+- Homebrew apps (casks and CLI tools, including VS Code Insiders)
 - Nix user packages (ripgrep, fd, fzf, jq, lazygit, Neovim, Hack Nerd Font)
 - Shell (zsh, aliases, starship prompt)
 - Editor (Neovim config with the rose-pine moon theme)
 - Terminal (WezTerm config with the rose-pine moon theme and dimmed unfocused windows)
 - Agent configs (Claude, Codex, opencode all share one AGENTS.md)
 - Optional Pi theme and local extensions, generic UI settings and model overrides, plus two deliberately pinned third-party Pi packages
+- SSH server (Remote Login), key-only auth, for connecting from another machine on the LAN (e.g. VS Code Remote-SSH)
+- Git identity, GitHub SSH auth, and commit signing, using a dedicated machine key pulled non-interactively from 1Password via a Service Account (no human required - this box runs unattended)
 
 ## Prerequisites
 
@@ -91,19 +93,7 @@ If you clone it, review these before you run `bootstrap.sh`:
   All three have to match.
 - **CPU architecture**, `hostPlatform` in `configuration.nix` (see Prerequisites above).
 
-**Git identity:** this config deliberately does not set your git name or email.
-Git will stop your first commit and tell you to set them (`git config --global user.name "Your Name"` and `git config --global user.email you@example.com`).
-If you'd rather manage that declaratively, add this back to `home.nix` with your own identity:
-
-```nix
-programs.git = {
-  enable = true;
-  settings.user = {
-    name = "Your Name";
-    email = "you@example.com";
-  };
-};
-```
+**Git identity:** `user.name`/`email` aren't in this repo at all - they come from a `GIT_NAME`/`GIT_EMAIL` item in 1Password, materialized by `rebuild.sh` straight to `~/.config/git/config-local` (outside this repo, same as the SSH keys) and pulled in via `programs.git.includes`, so this public repo never hardcodes anyone's real name or email. `user.signingkey` points at `~/.ssh/id_ed25519_mac_signing`, which likewise doesn't exist until "GitHub SSH authentication & commit signing" below is done. If you clone this repo, add your own `GIT_NAME`/`GIT_EMAIL` item instead (see that section for the exact item shape), or just hardcode `programs.git.settings.user` in `home.nix` if you don't want the 1Password indirection.
 
 **Homebrew cleanup warning:** `configuration.nix` sets `homebrew.onActivation.cleanup = "zap"`.
 That means every time you switch, Homebrew removes any package or cask on your machine that isn't listed in the `brews` and `casks` arrays in `configuration.nix`.
@@ -171,6 +161,48 @@ The version and commit are immutable pins, so Pi does not move them during packa
 Both packages execute with your full user permissions and must be trusted like any other executable code. The compaction package is experimental, sends the relevant OpenAI compaction and continuity data to OpenAI, and upstream declares the stale peer range `>=0.80.9 <0.81.0`; this exact immutable ref was locally proven to load and perform remote compaction on Pi 0.82.0. Do not treat that proof as a guarantee for a different Pi version or a different package ref.
 
 Home Manager deliberately does not manage `~/.pi/agent` itself, or Pi authentication, sessions, trust decisions, caches, npm/git package trees, or any other runtime state. The model overrides contain no credentials or endpoint settings, do not choose a default model, and only take effect after you authenticate Pi yourself. This remains an additive post-video layer: it does not install Pi, a launcher, or package source code into this repository.
+
+## Remote access (SSH / VS Code Remote-SSH)
+
+`configuration.nix` declares `services.openssh.enable = true;`, which turns on macOS's built-in Remote Login (the same sshd behind System Settings > Sharing) on every switch, and disables password authentication (`PasswordAuthentication no`, `KbdInteractiveAuthentication no`) so only key-based logins are accepted.
+
+`home/.ssh/authorized_keys` is symlinked to `~/.ssh/authorized_keys` and ships with a placeholder line. To let another machine (e.g. a Windows PC running VS Code Insiders' Remote-SSH extension) connect:
+
+1. On that machine, generate a keypair if you don't already have one: `ssh-keygen -t ed25519`.
+2. Replace the placeholder line in `home/.ssh/authorized_keys` with the contents of the resulting `.pub` file.
+3. Run `./rebuild.sh` on the Mac.
+
+This setup assumes both machines are on the same local network - it doesn't open any port on your router or configure a tunnel. For access from outside your LAN, put something like Tailscale in front of it rather than port-forwarding SSH directly to the internet.
+
+`visual-studio-code@insiders` is in the `casks` list, giving this Mac its own local VS Code Insiders install. That's separate from the Remote-SSH connection itself: when you connect from the Windows PC's VS Code Insiders, the Remote-SSH extension downloads and runs its own remote server component on the Mac automatically over the SSH connection the first time you connect - no separate install step for that part, since macOS already ships the `curl`/`tar` it needs.
+
+## GitHub SSH authentication & commit signing (1Password)
+
+This Mac runs unattended - nobody is sitting at it to approve a Touch ID prompt, and VNC-ing in every time git wants to push or sign a commit isn't "hands off." So this isn't 1Password's interactive SSH agent (that always requires a human to approve each use, every time it locks or restarts - fine for a laptop, not for a server). Instead:
+
+- A dedicated, non-default 1Password vault (`mac-automation`) holds two SSH keys used **only** by this machine: `dotfiles-mac-auth` and `dotfiles-mac-signing`, kept separate so a problem with one never touches the other.
+- A **Service Account** scoped read-only to just that vault authenticates non-interactively - no vault unlock, no biometrics, no human required.
+- `home/.ssh/*.tmpl` are committed templates containing only `op://` references (safe - no secrets). `rebuild.sh` runs `op inject` after every `darwin-rebuild switch` to materialize the real private keys, public keys, and `allowed_signers` straight into `~/.ssh/`, entirely outside both this git repo and the Nix store (which is world-readable, so secrets must never pass through it).
+- `home/.ssh/config` routes `github.com` at the local materialized key directly (`IdentityAgent none`), and falls back to 1Password's interactive agent for every other host - so a human still gets the vault-gated, private-key-never-touches-disk experience for their own ad hoc SSH use.
+- Git signing uses git's default `ssh-keygen`-based signer against the local key file - no `op-ssh-sign`, no 1Password dependency at commit time.
+- The same vault also holds a `dotfiles-personal` item with `GIT_NAME`/`GIT_EMAIL` fields, injected into `~/.config/git/config-local` and pulled in via `programs.git.includes` - so this repo's `home.nix` never hardcodes anyone's real name or email either.
+
+**The trade-off, stated plainly:** the private keys now exist as ordinary files on this machine's disk, protected by Unix permissions and FileVault-at-rest - not "held only inside 1Password's vault." That's the same security posture as any standard CI/deploy key, not stronger. It's the accepted trade-off for unattended automation; it is a real downgrade from the interactive-agent model, not a wash.
+
+One-time setup:
+
+1. In 1Password, create the `mac-automation` vault (Service Accounts can't be granted access to your Personal/Private/Shared vault, so it has to be a fresh one).
+2. In that vault, create `dotfiles-mac-auth` and `dotfiles-mac-signing` as SSH Key items (+ New Item > SSH Key > Generate, type ed25519), and a `dotfiles-personal` item (any item type with custom text fields) with `GIT_NAME` and `GIT_EMAIL` fields set to your actual name and email.
+3. Create a Service Account, read-only, scoped to only the `mac-automation` vault. Copy its token immediately - 1Password shows it exactly once.
+4. On this machine: `mkdir -p ~/.config/op && chmod 700 ~/.config/op`, save the token to `~/.config/op/service-account-token`, then `chmod 600` it. That path is outside `~/.dotfiles`, so it can never end up in this repo.
+5. Run `./rebuild.sh`. It installs `1password-cli` (the `op` binary, via the `casks` list), then injects the keys and git identity into `~/.ssh/` and `~/.config/git/config-local`.
+6. On GitHub, go to Settings > SSH and GPG keys > New SSH key. Add `~/.ssh/id_ed25519_mac_auth.pub`'s contents with key type "Authentication Key", and `~/.ssh/id_ed25519_mac_signing.pub`'s with key type "Signing Key".
+7. Point this clone at GitHub over SSH: `git remote set-url origin git@github.com:<you>/<repo>.git`.
+8. Verify: `ssh -T git@github.com` should greet you by username with no prompt at all, and `git commit --allow-empty -m test && git log --show-signature -1` should show a good SSH signature. GitHub also shows a "Verified" badge on pushed commits signed this way.
+
+Rotating a key later is just: generate a new one in the 1Password item, re-run `./rebuild.sh` (`op inject --force` overwrites the local file), and update the GitHub-registered public key to match.
+
+If you're setting this up on a laptop you actually sit at instead of a headless box, skip all of this and just use 1Password's interactive SSH agent directly - point `home/.ssh/config`'s `IdentityAgent` at 1Password's socket for all hosts, point `git`'s `gpg.ssh.program` at `op-ssh-sign`, and accept the occasional Touch ID prompt in exchange for the private key never touching disk at all. That's a better trade for a machine a person is actually present at.
 
 ## Notes
 
