@@ -31,13 +31,15 @@ in
 
   # firstmate's own CLI tools aren't in nixpkgs, so keep them installed via
   # plain `npm install -g` on every rebuild instead of hand-writing a Nix
-  # derivation for each one.
+  # derivation for each one. xAI's Grok CLI (@xai-official/grok, providing
+  # the `grok` binary) rides along here too since it's also an npm-only
+  # distribution, rather than standing up a second npm-global activation.
   home.activation.installFirstmateAxiTools = config.lib.dag.entryAfter [ "writeBoundary" ] ''
     # home.sessionVariables only applies to login shells, not this script, so
     # the npm prefix has to be set explicitly here too - otherwise npm falls
     # back to installing into the read-only Nix store.
     $DRY_RUN_CMD mkdir -p "${config.home.homeDirectory}/.npm-global"
-    $DRY_RUN_CMD env NPM_CONFIG_PREFIX="${config.home.homeDirectory}/.npm-global" ${pkgs.nodejs}/bin/npm install --global gh-axi chrome-devtools-axi lavish-axi tasks-axi quota-axi
+    $DRY_RUN_CMD env NPM_CONFIG_PREFIX="${config.home.homeDirectory}/.npm-global" ${pkgs.nodejs}/bin/npm install --global gh-axi chrome-devtools-axi lavish-axi tasks-axi quota-axi @xai-official/grok
   '';
 
   # no-mistakes and treehouse aren't packaged in nixpkgs either and ship their
