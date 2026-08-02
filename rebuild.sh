@@ -24,6 +24,13 @@ if [[ -f "$TOKEN_FILE" ]]; then
   mkdir -p "$HOME/.config/git"
   op inject --force -i "$DIR/home/.config/git/config-local.tmpl" -o "$HOME/.config/git/config-local"
   chmod 644 "$HOME/.config/git/config-local"
+
+  # gh (GitHub API - pull request create/status/merge) can't use the SSH key,
+  # so it gets its own token materialized the same way. Git itself still
+  # authenticates over SSH with id_ed25519_mac_auth; this only covers the API.
+  mkdir -p "$HOME/.config/gh"
+  op inject --force -i "$DIR/home/.config/gh/token.tmpl" -o "$HOME/.config/gh/token"
+  chmod 600 "$HOME/.config/gh/token"
 else
   echo "note: $TOKEN_FILE not found - skipping 1Password key injection (see README)" >&2
 fi

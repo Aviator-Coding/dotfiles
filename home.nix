@@ -27,7 +27,12 @@ in
   # npm's global installs default into the Nix store, which is read-only, so
   # global packages need their own writable prefix on PATH.
   home.sessionVariables.NPM_CONFIG_PREFIX = "${config.home.homeDirectory}/.npm-global";
-  home.sessionPath = [ "${config.home.homeDirectory}/.npm-global/bin" ];
+  home.sessionPath = [
+    "${config.home.homeDirectory}/.npm-global/bin"
+    # no-mistakes and treehouse install here (see the activation scripts below),
+    # so it has to be on PATH for those tools to resolve at runtime.
+    "${config.home.homeDirectory}/.local/bin"
+  ];
 
   # firstmate's own CLI tools aren't in nixpkgs, so keep them installed via
   # plain `npm install -g` on every rebuild instead of hand-writing a Nix
@@ -46,11 +51,20 @@ in
   # own installers, which are safe to re-run (they update in place). Re-run
   # them on every rebuild so a fresh clone ends up with the full firstmate
   # toolchain, same reasoning as the npm tools above.
+  #
+  # Both installers link into ~/.local/bin when it's on PATH (no sudo), and
+  # otherwise fall back to `sudo` into /usr/local/bin - which can't work during
+  # an unattended rebuild with nobody present to approve the prompt. So create
+  # ~/.local/bin and put it on PATH for the install shell to force the no-sudo
+  # path. (home.sessionPath doesn't reach these activation scripts, only login
+  # shells, so PATH has to be set here explicitly.)
   home.activation.installNoMistakes = config.lib.dag.entryAfter [ "writeBoundary" ] ''
-    $DRY_RUN_CMD sh -c '${pkgs.curl}/bin/curl -fsSL https://raw.githubusercontent.com/kunchenguid/no-mistakes/main/docs/install.sh | sh'
+    $DRY_RUN_CMD mkdir -p "${config.home.homeDirectory}/.local/bin"
+    $DRY_RUN_CMD sh -c 'export PATH="${config.home.homeDirectory}/.local/bin:$PATH"; ${pkgs.curl}/bin/curl -fsSL https://raw.githubusercontent.com/kunchenguid/no-mistakes/main/docs/install.sh | sh'
   '';
   home.activation.installTreehouse = config.lib.dag.entryAfter [ "writeBoundary" ] ''
-    $DRY_RUN_CMD sh -c '${pkgs.curl}/bin/curl -fsSL https://kunchenguid.github.io/treehouse/install.sh | sh'
+    $DRY_RUN_CMD mkdir -p "${config.home.homeDirectory}/.local/bin"
+    $DRY_RUN_CMD sh -c 'export PATH="${config.home.homeDirectory}/.local/bin:$PATH"; ${pkgs.curl}/bin/curl -fsSL https://kunchenguid.github.io/treehouse/install.sh | sh'
   '';
 
   # GitHub auth and commit signing for this box. This machine runs
@@ -82,6 +96,17 @@ in
     syntaxHighlighting.enable = true;  # commands turn green when valid
     initContent = ''
       bindkey '^f' autosuggest-accept
+    '';
+    # Runs from .zshenv for every shell (login, non-login, and the ones
+    # firstmate spawns for its workers), so gh and gh-axi authenticate to the
+    # GitHub API unattended. The token is materialized by rebuild.sh from
+    # 1Password; git itself still authenticates over SSH, not with this.
+    envExtra = ''
+      if [ -r "$HOME/.config/gh/token" ]; then
+        GH_TOKEN="$(< "$HOME/.config/gh/token")"
+        export GH_TOKEN
+        export GITHUB_TOKEN="$GH_TOKEN"
+      fi
     '';
     shellAliases = {
       ".." = "cd ..";
