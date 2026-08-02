@@ -16,11 +16,40 @@ in
     jq        # json on the command line
     lazygit
     neovim
+    nodejs    # npm-based CLI tooling
+    gh        # GitHub CLI
+    bun       # JS runtime/toolkit
     # the font everything renders in
     nerd-fonts.hack
   ];
   fonts.fontconfig.enable = true;
   home.sessionVariables.EDITOR = "nvim";
+  # npm's global installs default into the Nix store, which is read-only, so
+  # global packages need their own writable prefix on PATH.
+  home.sessionVariables.NPM_CONFIG_PREFIX = "${config.home.homeDirectory}/.npm-global";
+  home.sessionPath = [ "${config.home.homeDirectory}/.npm-global/bin" ];
+
+  # firstmate's own CLI tools aren't in nixpkgs, so keep them installed via
+  # plain `npm install -g` on every rebuild instead of hand-writing a Nix
+  # derivation for each one.
+  home.activation.installFirstmateAxiTools = config.lib.dag.entryAfter [ "writeBoundary" ] ''
+    # home.sessionVariables only applies to login shells, not this script, so
+    # the npm prefix has to be set explicitly here too - otherwise npm falls
+    # back to installing into the read-only Nix store.
+    $DRY_RUN_CMD mkdir -p "${config.home.homeDirectory}/.npm-global"
+    $DRY_RUN_CMD env NPM_CONFIG_PREFIX="${config.home.homeDirectory}/.npm-global" ${pkgs.nodejs}/bin/npm install --global gh-axi chrome-devtools-axi lavish-axi tasks-axi quota-axi
+  '';
+
+  # no-mistakes and treehouse aren't packaged in nixpkgs either and ship their
+  # own installers, which are safe to re-run (they update in place). Re-run
+  # them on every rebuild so a fresh clone ends up with the full firstmate
+  # toolchain, same reasoning as the npm tools above.
+  home.activation.installNoMistakes = config.lib.dag.entryAfter [ "writeBoundary" ] ''
+    $DRY_RUN_CMD sh -c '${pkgs.curl}/bin/curl -fsSL https://raw.githubusercontent.com/kunchenguid/no-mistakes/main/docs/install.sh | sh'
+  '';
+  home.activation.installTreehouse = config.lib.dag.entryAfter [ "writeBoundary" ] ''
+    $DRY_RUN_CMD sh -c '${pkgs.curl}/bin/curl -fsSL https://kunchenguid.github.io/treehouse/install.sh | sh'
+  '';
 
   # GitHub auth and commit signing for this box. This machine runs
   # unattended, so its keys are a dedicated pair pulled from a read-only
