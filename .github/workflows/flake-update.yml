@@ -22,8 +22,7 @@ jobs:
   update:
     name: Bump flake.lock
     # `nix flake update` only refetches input metadata and rewrites flake.lock;
-    # it builds nothing, so this does not need the macOS runner the system build
-    # uses in ci.yml.
+    # it builds nothing, so ubuntu-latest is sufficient here.
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
