@@ -19,6 +19,12 @@ in
     nodejs    # npm-based CLI tooling
     gh        # GitHub CLI
     bun       # JS runtime/toolkit
+    # secret-scanning guard for this public repo (see .pre-commit-config.yaml);
+    # pre-commit is the hook runner, gitleaks is the scanner it invokes plus the
+    # CLI for ad-hoc / full-history scans. bootstrap.sh runs `pre-commit install`
+    # after the first switch so a fresh machine engages the hooks automatically.
+    pre-commit
+    gitleaks
     # the font everything renders in
     nerd-fonts.hack
   ];

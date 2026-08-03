@@ -1,0 +1,17 @@
+# Local-only secret guard for this public repo. There is no GitHub Actions CI
+# here on purpose; these hooks are the automated check that a credential does
+# not land in a commit. Install once per clone with: pre-commit install
+# (bootstrap.sh does this after the first darwin-rebuild).
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      - id: gitleaks
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      # Cheap complementary guards; no auto-formatters (keeps the noise low).
+      - id: detect-private-key
+      - id: check-added-large-files
+        args: ["--maxkb=500"]
