@@ -41,9 +41,11 @@ jobs:
 
       - name: Open pull request
         # Created with the built-in GITHUB_TOKEN. PRs opened by GITHUB_TOKEN do
-        # not trigger other workflows, so this is intentionally NOT auto-closed by
-        # close-prs.yml (which fires on pull_request_target) and does not kick off
-        # ci.yml either; the owner reviews and rebuilds locally.
+        # not trigger other workflows on creation, so ci.yml does not auto-run
+        # when this PR is opened; the owner reviews and rebuilds locally.
+        # close-prs.yml also explicitly excludes github-actions[bot], so this PR
+        # survives even a manual reopen (which does fire close-prs.yml's
+        # pull_request_target trigger).
         # Requires repo setting: Settings -> Actions -> General ->
         # "Allow GitHub Actions to create and approve pull requests".
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
