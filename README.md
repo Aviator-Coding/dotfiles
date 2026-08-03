@@ -49,7 +49,7 @@ Change the host label or CPU architecture if needed, and read the Homebrew clean
 ./bootstrap.sh
 ```
 
-`bootstrap.sh` does four things, in order:
+`bootstrap.sh` does five things, in order:
 
 1. Installs Determinate Nix, if it isn't already installed.
 2. Symlinks this repo to `~/.dotfiles`.
