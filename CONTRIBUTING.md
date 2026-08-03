@@ -6,6 +6,26 @@ If you want to adapt something, please fork the repo and make it yours.
 If you found a bug, please open a bug report issue instead of sending a patch.
 Pull requests are auto-closed here so the repo can stay personal and predictable.
 
+## Secret scanning (pre-commit)
+
+This public repo installs a local [pre-commit](https://pre-commit.com) hook that
+runs [gitleaks](https://gitleaks.io) on every commit, plus light checks for
+private keys and oversized files. There is deliberately no GitHub Actions CI;
+these hooks are the automated guard against committing credentials.
+
+- **Fresh machine via `./bootstrap.sh`:** after the first `darwin-rebuild`,
+  bootstrap installs the hooks for you. Nothing extra to do.
+- **Already have the tools (or a new worktree/clone on a set-up machine):**
+  from the repo root, run once:
+  ```sh
+  pre-commit install
+  ```
+- **Packages:** `pre-commit` and `gitleaks` are declared in `home.nix` and land
+  on PATH after a rebuild. Do not `brew install` them ad hoc (Homebrew cleanup
+  is `zap`).
+
+To scan the full history yourself: `gitleaks detect --source . --log-opts="--all"`.
+
 ## Bugs
 
 Bug reports are welcome through GitHub Issues only.

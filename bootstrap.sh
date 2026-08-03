@@ -60,4 +60,16 @@ sudo "$NIX_BIN" run github:nix-darwin/nix-darwin/nix-darwin-26.05#darwin-rebuild
 # If this still fails with "nix: command not found", open a new terminal
 # (Determinate adds nix to new shells' PATH) and re-run ./bootstrap.sh.
 
+echo "==> Step 5: install git pre-commit hooks (secret scanning)"
+# .pre-commit-config.yaml is committed, but the hooks themselves live under
+# .git/hooks and are not. After the switch above, `pre-commit` and `gitleaks`
+# come from home.packages. Re-running install is idempotent.
+if command -v pre-commit >/dev/null 2>&1; then
+  (cd "$DIR" && pre-commit install)
+  echo "    pre-commit hooks installed in $DIR"
+else
+  echo "    pre-commit not on PATH yet (open a new shell after the switch, then:"
+  echo "    pre-commit install). See CONTRIBUTING.md."
+fi
+
 echo "==> Done. Use ./rebuild.sh for future changes."

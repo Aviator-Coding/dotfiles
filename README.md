@@ -17,7 +17,7 @@ Running the switch builds:
 
 - System settings (dark mode, key repeat, dock, Finder, trackpad)
 - Homebrew apps (casks and CLI tools, including VS Code Insiders)
-- Nix user packages (ripgrep, fd, fzf, jq, lazygit, Neovim, Hack Nerd Font)
+- Nix user packages (ripgrep, fd, fzf, jq, lazygit, Neovim, pre-commit, gitleaks, Hack Nerd Font)
 - Shell (zsh, aliases, starship prompt)
 - Editor (Neovim config with the rose-pine moon theme)
 - Terminal (WezTerm config with the rose-pine moon theme and dimmed unfocused windows)
@@ -49,7 +49,7 @@ Change the host label or CPU architecture if needed, and read the Homebrew clean
 ./bootstrap.sh
 ```
 
-`bootstrap.sh` does four things, in order:
+`bootstrap.sh` does five things, in order:
 
 1. Installs Determinate Nix, if it isn't already installed.
 2. Symlinks this repo to `~/.dotfiles`.
@@ -57,6 +57,7 @@ Change the host label or CPU architecture if needed, and read the Homebrew clean
 3. Checks the `user` configured in `flake.nix` against your actual macOS username, and offers to fix it for you if they differ.
 4. Runs the first `darwin-rebuild switch`.
    It fetches the `darwin-rebuild` tool from the nix-darwin 26.05 release branch, then applies this repo's locked flake config.
+5. Installs the local git pre-commit hooks (gitleaks secret scanning). See CONTRIBUTING.md if you need the one-line manual fallback.
 
 After that, `darwin-rebuild` exists and you're on the normal workflow below.
 

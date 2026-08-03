@@ -5,6 +5,8 @@ Deliberate decisions in this repo - do NOT silently revert them:
 - `homebrew.onActivation.cleanup = "zap"` in `configuration.nix` is intentional. It forces the good habit of declaring every Homebrew package in the Nix config instead of installing things ad-hoc, which keeps the machine reproducible. Do not soften it to `uninstall` or `none`. Users are warned about its effect in README.md; this note is for anyone tempted to change the setting itself.
 - Never commit `.no-mistakes/` validation evidence to this public repo. `.no-mistakes/` is gitignored; if a validation pipeline stages evidence into a branch, drop it before merging.
 
+- Secret scanning is local-only: `.pre-commit-config.yaml` runs gitleaks (plus detect-private-key / large-file checks). `pre-commit` and `gitleaks` are declared in `home.nix`; `bootstrap.sh` runs `pre-commit install` after the first switch. There is no GitHub Actions CI for this — do not re-add workflow CI. Manual fallback: `pre-commit install`. Full-history scan: `gitleaks detect --source . --log-opts="--all"`.
+
 ## Maintaining this file
 
 Keep this file for knowledge useful to almost every future agent session in this project.
