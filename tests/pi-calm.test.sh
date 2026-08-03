@@ -114,14 +114,13 @@ test_zero_coupling_and_state_file() {
     assert_not_contains "$(cat "$file")" "$separator" "$file contains the operational separator"
   done
   # The upstream project name may appear only in a license attribution. This
-  # guards the shipped Calm extension against coupling to the upstream project.
-  # Like home.nix, README.md is intentionally NOT scanned for the bare name
-  # because this repo is a firstmate user's dotfiles and the README legitimately
-  # references firstmate's own CLI tooling (e.g. README.md:186's gh/gh-axi
-  # gh-token feature), which is an unrelated feature, not a coupling of the
-  # Calm extension.
+  # guards the shipped Calm extension and its README write-up against coupling
+  # to the upstream project; home.nix is intentionally NOT scanned because the
+  # repo legitimately installs firstmate's own CLI tools there (see the
+  # installFirstmateAxiTools activation block), which is an unrelated feature,
+  # not a coupling of the Calm extension.
   local attribution_name="First""mate"
-  license_hits=$(grep -rni "$attribution_name" "$CALM_DIR" 2>/dev/null | grep -v "Adapted from" || true)
+  license_hits=$(grep -rni "$attribution_name" "$CALM_DIR" "$ROOT/README.md" 2>/dev/null | grep -v "Adapted from" || true)
   [ -z "$license_hits" ] || fail "unexpected upstream references outside license attribution: $license_hits"
   grep -q "MIT License" "$CALM_DIR/LICENSE" || fail "calm LICENSE lost the MIT permission text"
   grep -q "Copyright (c) 2026 Kun Chen" "$CALM_DIR/LICENSE" || fail "calm LICENSE lost the copyright notice"
