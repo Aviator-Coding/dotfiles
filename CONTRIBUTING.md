@@ -10,8 +10,8 @@ Pull requests are auto-closed here so the repo can stay personal and predictable
 
 This public repo installs a local [pre-commit](https://pre-commit.com) hook that
 runs [gitleaks](https://gitleaks.io) on every commit, plus light checks for
-private keys and oversized files. There is deliberately no GitHub Actions CI;
-these hooks are the automated guard against committing credentials.
+private keys and oversized files. Secret scanning runs only in this local hook,
+never in CI; these hooks are the automated guard against committing credentials.
 
 - **Fresh machine via `./bootstrap.sh`:** after the first `darwin-rebuild`,
   bootstrap installs the hooks for you. Nothing extra to do.
