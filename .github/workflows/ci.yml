@@ -1,16 +1,13 @@
 name: CI
 
-# Validates the flake and runs the repo's shell tests on push and PR. This mainly
-# guards the owner's own pushes and PRs: close-prs.yml auto-closes PRs from
-# non-owners before they can be reviewed, which is intended.
+# Runs the repo's shell tests on push and PR. This mainly guards the owner's own
+# pushes and PRs: close-prs.yml auto-closes PRs from non-owners before they can
+# be reviewed, which is intended.
 #
-# Two jobs:
-#   - nix:   `nix flake check` on a macos-14 runner (the config targets
-#            aarch64-darwin, so it must be evaluated natively on macOS). This
-#            only evaluates/checks the flake; it never builds the full darwin
-#            system closure, which is long and costly - the machine rebuilds
-#            locally via rebuild.sh.
-#   - tests: the tests/ shell suite on ubuntu-latest.
+# CI deliberately does not evaluate or build the nix-darwin config: `nix flake
+# check` is not run here, and the full darwin system closure is never built on a
+# runner (it is long and costly). The machine rebuilds and evaluates the flake
+# locally via rebuild.sh; CI's job is to run the tests/ suite.
 on:
   push:
   pull_request:
@@ -20,41 +17,10 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
-# Default least-privilege for all jobs. The nix job raises id-token at the job
-# level for FlakeHub Cache's OIDC auth; the tests job needs nothing more.
 permissions:
   contents: read
 
 jobs:
-  nix:
-    name: Flake check
-    runs-on: macos-14
-    # FlakeHub Cache authenticates via OIDC, so this job needs id-token: write.
-    # Scoped to this job only - the workflow default and the tests job stay at
-    # contents: read.
-    permissions:
-      id-token: write
-      contents: read
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - name: Install Nix (Determinate Systems, flakes enabled)
-        uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22
-        with:
-          # nix-command and flakes are on by default in the Determinate installer;
-          # set them explicitly so CI does not depend on that default.
-          extra-conf: |
-            experimental-features = nix-command flakes
-
-      - name: Enable FlakeHub Cache
-        # Replaces the deprecated magic-nix-cache. Uses the repo's OIDC token
-        # (id-token: write above) to authenticate to FlakeHub Cache.
-        uses: DeterminateSystems/flakehub-cache-action@e62e272c914d4ad8e4d1587a864e9c3ad2cba9de # v3.21.9
-
-      - name: nix flake check
-        run: nix flake check --print-build-logs
-
   tests:
     name: Shell tests
     # The tests/ suite is plain shell + node and skips macOS-only paths (pi/tmux)
