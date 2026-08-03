@@ -1,5 +1,5 @@
-# Local-only secret guard for this public repo. There is no GitHub Actions CI
-# here on purpose; these hooks are the automated check that a credential does
+# Local-only secret guard for this public repo. Secret scanning is not run in
+# CI on purpose; these hooks are the automated check that a credential does
 # not land in a commit. Install once per clone with: pre-commit install
 # (bootstrap.sh does this after the first darwin-rebuild).
 repos:
