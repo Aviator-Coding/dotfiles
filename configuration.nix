@@ -50,7 +50,6 @@
     ];
     casks = [
       "wezterm"
-      "claude-code"
       "visual-studio-code@insiders"
       "1password"
       "1password-cli"

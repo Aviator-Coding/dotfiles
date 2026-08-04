@@ -7,6 +7,8 @@ Deliberate decisions in this repo - do NOT silently revert them:
 
 - Secret scanning is local-only: `.pre-commit-config.yaml` runs gitleaks (plus detect-private-key / large-file checks). `pre-commit` and `gitleaks` are declared in `home.nix`; `bootstrap.sh` runs `pre-commit install` after the first switch. Secret scanning stays local-only and is not run in CI - do not add a secret-scanning workflow (`.github/workflows/ci.yml` deliberately runs only the `tests/` suite). Manual fallback: `pre-commit install`. Full-history scan: `gitleaks detect --source . --log-opts="--all"`.
 
+- Claude Code is installed via the npm-global activation script in `home.nix` (`@anthropic-ai/claude-code`), not `homebrew.casks`. The Homebrew cask build is blocked by Apple System Policy (quarantine xattr suspends it before `main` runs, hanging forever). Do not move it back to `homebrew.casks`.
+
 ## Maintaining this file
 
 Keep this file for knowledge useful to almost every future agent session in this project.

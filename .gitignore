@@ -2,11 +2,14 @@
 home/.config/herdr/*.log
 home/.config/herdr/session.json
 home/.config/herdr/*.sock
+home/.config/herdr/.plugins.lock
+home/.config/herdr/release-notes.json
 
 # macOS + nix build noise
 .DS_Store
 result
 result-*
+/log.txt
 
 # Pi credentials and Home Manager adoption backups stay local
 /home/.pi/agent/auth.json
