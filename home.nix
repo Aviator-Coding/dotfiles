@@ -45,12 +45,17 @@ in
   # derivation for each one. xAI's Grok CLI (@xai-official/grok, providing
   # the `grok` binary) rides along here too since it's also an npm-only
   # distribution, rather than standing up a second npm-global activation.
+  # Claude Code (@anthropic-ai/claude-code) is here too, not in
+  # `homebrew.casks`: the Homebrew cask build carries a quarantine xattr that
+  # Apple System Policy suspends before it reaches `main`, hanging forever
+  # with no output. npm is the supported install path until upstream fixes
+  # the cask.
   home.activation.installFirstmateAxiTools = config.lib.dag.entryAfter [ "writeBoundary" ] ''
     # home.sessionVariables only applies to login shells, not this script, so
     # the npm prefix has to be set explicitly here too - otherwise npm falls
     # back to installing into the read-only Nix store.
     $DRY_RUN_CMD mkdir -p "${config.home.homeDirectory}/.npm-global"
-    $DRY_RUN_CMD env NPM_CONFIG_PREFIX="${config.home.homeDirectory}/.npm-global" ${pkgs.nodejs}/bin/npm install --global gh-axi chrome-devtools-axi lavish-axi tasks-axi quota-axi @xai-official/grok
+    $DRY_RUN_CMD env NPM_CONFIG_PREFIX="${config.home.homeDirectory}/.npm-global" ${pkgs.nodejs}/bin/npm install --global gh-axi chrome-devtools-axi lavish-axi tasks-axi quota-axi @xai-official/grok @anthropic-ai/claude-code
   '';
 
   # no-mistakes and treehouse aren't packaged in nixpkgs either and ship their

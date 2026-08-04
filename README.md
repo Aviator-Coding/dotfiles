@@ -105,6 +105,10 @@ Read through `brews` and `casks` before you run `bootstrap.sh` or `rebuild.sh` f
 It's a real public Homebrew formula (`brew info herdr` finds it in homebrew-core, no tap needed), so it will install fine.
 If you don't use it, just remove it from `brews` in your copy.
 
+**About Claude Code:** it's installed via npm (`home.nix`'s npm-global activation script), not a Homebrew cask.
+The Homebrew cask build carries a quarantine xattr that Apple System Policy suspends before it reaches `main`, hanging forever with no output.
+npm is the supported install path until upstream fixes the cask.
+
 **Heads-up:**
 
 - `home/AGENTS.md` is my personal agent policy, and `home.nix` installs it for Claude, Codex, and opencode.
