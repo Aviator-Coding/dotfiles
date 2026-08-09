@@ -22,7 +22,7 @@ Running the switch builds:
 - Editor (Neovim config with the rose-pine moon theme)
 - Terminal (WezTerm config with the rose-pine moon theme and dimmed unfocused windows)
 - Agent configs (Claude, Codex, opencode all share one AGENTS.md)
-- Optional Pi theme and local extensions, generic UI settings and model overrides, plus two deliberately pinned third-party Pi packages
+- Optional Pi theme and local extensions, UI settings, a default model and model overrides, plus two deliberately pinned third-party Pi packages
 - SSH server (Remote Login), key-only auth, for connecting from another machine on the LAN (e.g. VS Code Remote-SSH)
 - Git identity, GitHub SSH auth, and commit signing, using a dedicated machine key pulled non-interactively from 1Password via a Service Account (no human required - this box runs unattended)
 
@@ -142,7 +142,7 @@ This repo installs the Pi CLI declaratively: the official [`pi-coding-agent`](ht
 brew install --cask kunchenguid/tap/pi-launcher
 ```
 
-Home Manager owns exactly two repository-authored Pi directories: `~/.pi/agent/themes` and `~/.pi/agent/extensions`. It also links `models.json` and `settings.json` as individual files. The local extension directory is for public, repository-authored extensions only - third-party package code never belongs there. Run `/reload` after editing a local extension or other Pi resources. The terminal-title extension shows a spinner while Pi is working, then a completion mark with the session name or current directory. The `rose-pine-moon` theme was authored clean-room from the public [Rosé Pine Moon palette](https://rosepinetheme.com/palette) and Pi's [public theme schema](https://raw.githubusercontent.com/earendil-works/pi/main/packages/coding-agent/src/modes/interactive/theme/theme-schema.json), not from a private or live theme file.
+Home Manager owns exactly two repository-authored Pi directories: `~/.pi/agent/themes` and `~/.pi/agent/extensions`. It also links `models.json` and `settings.json` as individual files. Because those links point back into the clone, Pi rewrites `settings.json` in place - it serializes without a trailing newline (do not add one) and re-adds churn keys such as `lastChangelogVersion` on upgrade; discard those with `git checkout` instead of committing them. The local extension directory is for public, repository-authored extensions only - third-party package code never belongs there. Run `/reload` after editing a local extension or other Pi resources. The terminal-title extension shows a spinner while Pi is working, then a completion mark with the session name or current directory. The `rose-pine-moon` theme was authored clean-room from the public [Rosé Pine Moon palette](https://rosepinetheme.com/palette) and Pi's [public theme schema](https://raw.githubusercontent.com/earendil-works/pi/main/packages/coding-agent/src/modes/interactive/theme/theme-schema.json), not from a private or live theme file.
 
 ### Pi Calm
 
@@ -161,7 +161,7 @@ The version and commit are immutable pins, so Pi does not move them during packa
 
 Both packages execute with your full user permissions and must be trusted like any other executable code. The compaction package is experimental, sends the relevant OpenAI compaction and continuity data to OpenAI, and upstream declares the stale peer range `>=0.80.9 <0.81.0`; this exact immutable ref was locally proven to load and perform remote compaction on Pi 0.82.0. Do not treat that proof as a guarantee for a different Pi version or a different package ref.
 
-Home Manager deliberately does not manage `~/.pi/agent` itself, or Pi authentication, sessions, trust decisions, caches, npm/git package trees, or any other runtime state. The model overrides contain no credentials or endpoint settings, do not choose a default model, and only take effect after you authenticate Pi yourself. This remains an additive post-video layer for `~/.pi/agent` config: beyond the `pi-coding-agent` CLI declared in `configuration.nix`, it does not install a launcher or vendor package source code into this repository.
+Home Manager deliberately does not manage `~/.pi/agent` itself, or Pi authentication, sessions, trust decisions, caches, npm/git package trees, or any other runtime state. `settings.json` does pick a default provider, model, and thinking level (`xai` / `grok-4.5` / `medium`); change those three keys if you use a different provider. Neither those settings nor the model overrides contain credentials or endpoint settings, and both only take effect after you authenticate Pi yourself. This remains an additive post-video layer for `~/.pi/agent` config: beyond the `pi-coding-agent` CLI declared in `configuration.nix`, it does not install a launcher or vendor package source code into this repository.
 
 ## Remote access (SSH / VS Code Remote-SSH)
 
