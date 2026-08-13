@@ -31,19 +31,21 @@ test_power_block_declares_no_sleep_and_auto_restart() {
   pass "configuration.nix declares no system/disk sleep and automatic restart"
 }
 
-# restartAfterFreeze is excluded on purpose. nix-darwin applies it with an
+# restartAfterFreeze was verified working on this hardware (Mac16,10 / M4
+# Mac mini, macOS 26.5.2) on 2026-08-12 via `sudo systemsetup
+# -getRestartFreeze` reporting "On". nix-darwin still applies it with an
 # unguarded `systemsetup -setRestartFreeze` in an activation script that runs
-# under `set -e`, and restart-on-freeze is commonly unsupported on Apple
-# Silicon - so adding it back untested breaks `darwin-rebuild switch` outright
-# rather than merely missing a setting.
-test_restart_after_freeze_stays_unset() {
+# under `set -e`, and restart-on-freeze is commonly unsupported on other
+# Apple Silicon hardware, so this stays a text assertion on the declaration
+# rather than live `systemsetup` output: CI never applies the darwin system.
+test_restart_after_freeze_is_declared() {
   local power
 
   power=$(awk '/^  power = \{/, /^  \};/' "$ROOT/configuration.nix")
-  assert_not_contains "$power" 'restartAfterFreeze =' \
-    "configuration.nix now sets power.restartAfterFreeze - it is unverified on this Apple Silicon hardware and an unsupported systemsetup call aborts activation"
+  assert_contains "$power" 'restartAfterFreeze = true' \
+    "configuration.nix no longer sets power.restartAfterFreeze = true - this was verified working on this hardware on 2026-08-12, do not revert without re-verifying"
 
-  pass "restartAfterFreeze is left unset"
+  pass "restartAfterFreeze is declared"
 }
 
 # Display sleep is deliberately left at the system default. Upstream's
@@ -81,6 +83,6 @@ test_power_nap_disabled_without_failing_activation() {
 }
 
 test_power_block_declares_no_sleep_and_auto_restart
-test_restart_after_freeze_stays_unset
+test_restart_after_freeze_is_declared
 test_display_sleep_stays_unmanaged
 test_power_nap_disabled_without_failing_activation

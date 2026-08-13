@@ -48,12 +48,14 @@
     # Come back on its own after a power cut. This one is confirmed supported
     # here (it shows up in live `pmset -g custom` as `autorestart`).
     restartAfterPowerFailure = true;
-    # restartAfterFreeze is deliberately NOT set: nix-darwin applies it with an
-    # unguarded `systemsetup -setRestartFreeze` inside an activation script that
-    # runs under `set -e`, and restart-on-freeze is commonly unsupported on
-    # Apple Silicon (this is a Mac16,10 / M4). Unverifiable without admin
-    # access, and the downside of guessing wrong is an aborted
-    # `darwin-rebuild switch`, not just a missing setting.
+    # Confirmed on this machine (Mac16,10 / M4 Mac mini, macOS 26.5.2) on
+    # 2026-08-12 via `sudo systemsetup -getRestartFreeze` reporting "On"
+    # after `sudo systemsetup -setRestartFreeze on`. nix-darwin still applies
+    # this with an unguarded `systemsetup -setRestartFreeze` inside an
+    # activation script that runs under `set -e`, so on hardware where the
+    # command is unsupported, setting this would abort `darwin-rebuild
+    # switch` outright - verify on your own hardware before copying this.
+    restartAfterFreeze = true;
   };
   # Power Nap has no declarative nix-darwin option at the pinned nix-darwin
   # rev (checked modules/power/{default,sleep}.nix). Its dark-wake
