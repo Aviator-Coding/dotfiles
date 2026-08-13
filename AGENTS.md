@@ -9,6 +9,8 @@ Deliberate decisions in this repo - do NOT silently revert them:
 
 - Claude Code is installed via the npm-global activation script in `home.nix` (`@anthropic-ai/claude-code`), not `homebrew.casks`. The Homebrew cask build is blocked by Apple System Policy (quarantine xattr suspends it before `main` runs, hanging forever). Do not move it back to `homebrew.casks`; `tests/claude-code-npm.test.sh` guards both halves of this.
 
+- `configuration.nix` sets `power.sleep.computer`/`power.sleep.harddisk = "never"` and `power.restartAfter{PowerFailure,Freeze} = true`, and disables Power Nap via `system.activationScripts.postActivation`. This machine runs 24/7 unattended; macOS's default idle sleep was killing unattended agent work. Do not soften these back to a timed sleep, and do not add display-sleep or other energy-saver settings alongside them - display sleep is deliberately left at the system default. Verify option names against the pinned nix-darwin (`modules/power/*.nix` in `flake.lock`'s `nix-darwin` rev) before changing this block.
+
 ## Maintaining this file
 
 Keep this file for knowledge useful to almost every future agent session in this project.
