@@ -109,8 +109,10 @@ If you don't use it, just remove it from `brews` in your copy.
 The Homebrew cask build carries a quarantine xattr that Apple System Policy suspends before it reaches `main`, hanging forever with no output.
 npm is the supported install path until upstream fixes the cask.
 
-**About the power settings:** `configuration.nix` sets `power.sleep.computer`/`power.sleep.harddisk` to `"never"` and enables `restartAfterPowerFailure`/`restartAfterFreeze`.
+**About the power settings:** `configuration.nix` sets `power.sleep.computer`/`power.sleep.harddisk` to `"never"` and enables `restartAfterPowerFailure`.
 This machine runs 24/7 on mains power for unattended agent work, and macOS's default idle sleep (1 minute) killed runs mid-session.
+`power.restartAfterFreeze` is left out on purpose, not by oversight: nix-darwin applies it with an unguarded `systemsetup -setRestartFreeze` in an activation script that runs under `set -e`, and restart-on-freeze is commonly unsupported on Apple Silicon, so an unsupported command there would abort `darwin-rebuild switch` outright.
+Add it back only if you've confirmed the setting works on your hardware.
 If you clone this repo for a laptop or a machine that should sleep normally, remove these before you switch - they will keep any machine awake and drawing power indefinitely.
 Display sleep is deliberately left unmanaged (stays at the system default): it doesn't interrupt work, so there's no reason to disable it.
 Power Nap is turned off separately, by the `system.activationScripts.postActivation` block right below the `power` attrset - nix-darwin has no declarative option for it at the pinned rev.
