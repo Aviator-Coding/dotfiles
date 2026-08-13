@@ -35,6 +35,27 @@
     finder.CreateDesktop = false;          # clean desktop
     trackpad.Clicking = true;              # tap to click
   };
+  # This machine is a Mac mini on permanent mains power, kept on 24/7 for
+  # unattended agent work. macOS's default `sleep 1` (system sleeps after
+  # 1 minute idle) killed unattended runs repeatedly. Do not reintroduce
+  # system/disk idle sleep here - display sleep (system default, ~10 min)
+  # is intentionally left unmanaged since it costs nothing on its own.
+  power = {
+    sleep = {
+      computer = "never";  # never idle-sleep the system - the actual fix
+      harddisk = "never";  # a spun-down disk stalls long-running work
+    };
+    restartAfterPowerFailure = true;  # come back on its own after a power cut
+    restartAfterFreeze = true;        # and after a freeze, if supported
+  };
+  # Power Nap has no declarative nix-darwin option at the pinned nix-darwin
+  # rev (checked modules/power/{default,sleep}.nix). Its dark-wake
+  # maintenance cycles buy nothing once the system never sleeps, so turn it
+  # off explicitly via activation script instead of leaving it to chance.
+  system.activationScripts.postActivation.text = ''
+    echo "disabling Power Nap (system never sleeps, so its dark-wake cycles buy nothing)" >&2
+    pmset -a powernap 0
+  '';
   nix-homebrew = {
     enable = true;
     inherit user;
