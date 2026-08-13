@@ -16,6 +16,7 @@ If you find a bug, please open a GitHub Issue using the bug report template.
 Running the switch builds:
 
 - System settings (dark mode, key repeat, dock, Finder, trackpad)
+- Always-on power behavior (no system or disk sleep, restart after a power cut, Power Nap off) - see "About the power settings" below before you switch a machine that should sleep
 - Homebrew apps (casks and CLI tools, including VS Code Insiders)
 - Nix user packages (ripgrep, fd, fzf, jq, lazygit, Neovim, pre-commit, gitleaks, Hack Nerd Font)
 - Shell (zsh, aliases, starship prompt)
@@ -108,6 +109,15 @@ If you don't use it, just remove it from `brews` in your copy.
 **About Claude Code:** it's installed via npm (`home.nix`'s npm-global activation script), not a Homebrew cask.
 The Homebrew cask build carries a quarantine xattr that Apple System Policy suspends before it reaches `main`, hanging forever with no output.
 npm is the supported install path until upstream fixes the cask.
+
+**About the power settings:** `configuration.nix` sets `power.sleep.computer`/`power.sleep.harddisk` to `"never"` and enables `restartAfterPowerFailure`.
+This machine runs 24/7 on mains power for unattended agent work, and macOS's default idle sleep (1 minute) killed runs mid-session.
+`power.restartAfterFreeze` is left out on purpose, not by oversight: nix-darwin applies it with an unguarded `systemsetup -setRestartFreeze` in an activation script that runs under `set -e`, and restart-on-freeze is commonly unsupported on Apple Silicon, so an unsupported command there would abort `darwin-rebuild switch` outright.
+Add it back only if you've confirmed the setting works on your hardware.
+If you clone this repo for a laptop or a machine that should sleep normally, remove these before you switch - they will keep any machine awake and drawing power indefinitely.
+Display sleep is deliberately left unmanaged (stays at the system default): it doesn't interrupt work, so there's no reason to disable it.
+Power Nap is turned off separately, by the `system.activationScripts.postActivation` block right below the `power` attrset - nix-darwin has no declarative option for it at the pinned rev.
+Deleting the `power` attrset alone will not restore Power Nap: remove that activation script too, and because activation scripts only ever apply a setting, re-enable it once by hand with `sudo pmset -a powernap 1`.
 
 **Heads-up:**
 
