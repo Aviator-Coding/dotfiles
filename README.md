@@ -110,10 +110,11 @@ If you don't use it, just remove it from `brews` in your copy.
 The Homebrew cask build carries a quarantine xattr that Apple System Policy suspends before it reaches `main`, hanging forever with no output.
 npm is the supported install path until upstream fixes the cask.
 
-**About the power settings:** `configuration.nix` sets `power.sleep.computer`/`power.sleep.harddisk` to `"never"` and enables `restartAfterPowerFailure`.
+**About the power settings:** `configuration.nix` sets `power.sleep.computer`/`power.sleep.harddisk` to `"never"` and enables `restartAfterPowerFailure` and `restartAfterFreeze`.
 This machine runs 24/7 on mains power for unattended agent work, and macOS's default idle sleep (1 minute) killed runs mid-session.
-`power.restartAfterFreeze` is left out on purpose, not by oversight: nix-darwin applies it with an unguarded `systemsetup -setRestartFreeze` in an activation script that runs under `set -e`, and restart-on-freeze is commonly unsupported on Apple Silicon, so an unsupported command there would abort `darwin-rebuild switch` outright.
-Add it back only if you've confirmed the setting works on your hardware.
+nix-darwin applies `restartAfterFreeze` with an unguarded `systemsetup -setRestartFreeze` in an activation script that runs under `set -e`, and restart-on-freeze is commonly unsupported on Apple Silicon, so an unsupported command there would abort `darwin-rebuild switch` outright.
+Verified working on this machine (Mac16,10 / M4 Mac mini, macOS 26.5.2) on 2026-08-12: `sudo systemsetup -getRestartFreeze` reported `Restart After Freeze: On` after setting it.
+That verification is hardware-specific - confirm `restartAfterFreeze` works on your own hardware (`sudo systemsetup -setRestartFreeze on` then `sudo systemsetup -getRestartFreeze`) before enabling it on a different machine.
 If you clone this repo for a laptop or a machine that should sleep normally, remove these before you switch - they will keep any machine awake and drawing power indefinitely.
 Display sleep is deliberately left unmanaged (stays at the system default): it doesn't interrupt work, so there's no reason to disable it.
 Power Nap is turned off separately, by the `system.activationScripts.postActivation` block right below the `power` attrset - nix-darwin has no declarative option for it at the pinned rev.
