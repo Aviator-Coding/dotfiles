@@ -16,6 +16,7 @@ If you find a bug, please open a GitHub Issue using the bug report template.
 Running the switch builds:
 
 - System settings (dark mode, key repeat, dock, Finder, trackpad)
+- Always-on power behavior (no system or disk sleep, restart after a power cut, Power Nap off) - see "About the power settings" below before you switch a machine that should sleep
 - Homebrew apps (casks and CLI tools, including VS Code Insiders)
 - Nix user packages (ripgrep, fd, fzf, jq, lazygit, Neovim, pre-commit, gitleaks, Hack Nerd Font)
 - Shell (zsh, aliases, starship prompt)
