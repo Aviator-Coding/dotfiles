@@ -113,6 +113,8 @@ npm is the supported install path until upstream fixes the cask.
 This machine runs 24/7 on mains power for unattended agent work, and macOS's default idle sleep (1 minute) killed runs mid-session.
 If you clone this repo for a laptop or a machine that should sleep normally, remove these before you switch - they will keep any machine awake and drawing power indefinitely.
 Display sleep is deliberately left unmanaged (stays at the system default): it doesn't interrupt work, so there's no reason to disable it.
+Power Nap is turned off separately, by the `system.activationScripts.postActivation` block right below the `power` attrset - nix-darwin has no declarative option for it at the pinned rev.
+Deleting the `power` attrset alone will not restore Power Nap: remove that activation script too, and because activation scripts only ever apply a setting, re-enable it once by hand with `sudo pmset -a powernap 1`.
 
 **Heads-up:**
 

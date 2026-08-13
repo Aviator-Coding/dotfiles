@@ -52,9 +52,18 @@
   # rev (checked modules/power/{default,sleep}.nix). Its dark-wake
   # maintenance cycles buy nothing once the system never sleeps, so turn it
   # off explicitly via activation script instead of leaving it to chance.
+  #
+  # Activation runs under `set -e` and postActivation is the last fragment
+  # before /run/current-system is repointed, so this must never exit nonzero:
+  # hardware without Power Nap support would otherwise leave the whole
+  # generation applied but not marked current.
   system.activationScripts.postActivation.text = ''
-    echo "disabling Power Nap (system never sleeps, so its dark-wake cycles buy nothing)" >&2
-    pmset -a powernap 0
+    if pmset -g cap | grep -q powernap; then
+      echo "disabling Power Nap (system never sleeps, so its dark-wake cycles buy nothing)" >&2
+      pmset -a powernap 0 || echo "warning: could not disable Power Nap" >&2
+    else
+      echo "skipping Power Nap (not supported on this hardware)" >&2
+    fi
   '';
   nix-homebrew = {
     enable = true;
